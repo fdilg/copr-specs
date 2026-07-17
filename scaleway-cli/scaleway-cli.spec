@@ -1,5 +1,5 @@
 Name:           scaleway-cli
-Version:        2.56.3
+Version:        2.58.3
 Release:        1%{?dist}
 Summary:        CLI for Scaleway Cloud
 
