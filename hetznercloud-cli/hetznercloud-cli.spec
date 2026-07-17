@@ -1,5 +1,5 @@
 Name:           hetznercloud-cli
-Version:        1.65.0
+Version:        1.66.0
 Release:        1%{?dist}
 Summary:        CLI for Hetzner Cloud
 
