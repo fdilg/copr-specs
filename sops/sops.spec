@@ -1,5 +1,5 @@
 Name:           sops
-Version:        3.13.1
+Version:        3.13.2
 Release:        1%{?dist}
 Summary:        SOPS is an editor of encrypted files
 
