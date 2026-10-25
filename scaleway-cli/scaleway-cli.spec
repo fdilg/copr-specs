@@ -8,7 +8,7 @@ URL:            https://github.com/scaleway/scaleway-cli
 Source0:        https://github.com/scaleway/scaleway-cli/archive/refs/tags/v%{version}.tar.gz
 
 BuildRequires:  go-rpm-macros
-BuildRequires:  golang >= 1.26.0
+BuildRequires:  golang >= 1.27.1
 
 %global debug_package %{nil}
 
