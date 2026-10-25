@@ -34,7 +34,7 @@ install -Dpm 0755 sops %{buildroot}%{_bindir}/sops
 %{_bindir}/sops
 
 %changelog
-* Sun Jun 14 2026 Frauke Dilg <frauke@dilg.dev> - 3.13.2-1
-- Initial automated Copr packaging
 * Sun Oct 25 2026 Frauke Dilg <frauke@dilg.dev> - 3.13.3-1
 - Update to latest version
+* Sun Jun 14 2026 Frauke Dilg <frauke@dilg.dev> - 3.13.2-1
+- Initial automated Copr packaging

@@ -34,9 +34,9 @@ install -Dpm 0755 scw %{buildroot}%{_bindir}/scw
 %{_bindir}/scw
 
 %changelog
-* Sun Jun 14 2026 Frauke Dilg <frauke@dilg.dev> - 2.56.3-1
-- Initial automated Copr packaging
-* Fri Jul 17 2026 Frauke Dilg <frauke@dilg.dev> - 2.58.3-1
-- Update to latest version
 * Sun Oct 25 2026 Frauke Dilg <frauke@dilg.dev> - 2.65.2-1
 - Update to latest version
+* Fri Jul 17 2026 Frauke Dilg <frauke@dilg.dev> - 2.58.3-1
+- Update to latest version
+* Sun Jun 14 2026 Frauke Dilg <frauke@dilg.dev> - 2.56.3-1
+- Initial automated Copr packaging
