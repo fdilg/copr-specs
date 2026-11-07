@@ -7,6 +7,9 @@ on:
 
 jobs:
   check-updates:
+    permissions:
+      actions: read
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -24,29 +27,101 @@ jobs:
           - name: sops
             spec: sops/sops.spec
             repo: getsops/sops
+    outputs:
+      json: ${{ steps.matrix-output.outputs.json }}
 
     steps:
-      - uses: actions/checkout@v4
-      - name: Check and update ${{ matrix.name }}
+      - uses: actions/checkout@v6
+      - name: Check ${{ matrix.name }}
         id: update
         env:
-          AUTHOR: Frauke Dilg <frauke@dilg.dev>
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LATEST_TAG=$(gh api repos/${{ matrix.repo }}/releases/latest --jq '.tag_name' | sed 's/^v//')
           CURRENT_VERSION=$(grep -E '^Version:' ${{ matrix.spec }} | awk '{print $2}')
 
           echo "Current: $CURRENT_VERSION, Latest: $LATEST_TAG"
+          
+          # Output versions with tool name prefix for summary
+          echo "current=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "latest=$LATEST_TAG" >> "$GITHUB_OUTPUT"
 
-          if [ -n "$LATEST_TAG" ] && [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
-            # Update Version field and reset Release
-            sed -i -E "s/^(Version:[[:space:]]+).*/\\1${LATEST_TAG}/" ${{ matrix.spec }}
+      - uses: beacon-biosignals/matrix-output@v1
+        id: matrix-output
+        with:
+          yaml: |
+            name: ${{ matrix.name }}
+            spec: ${{ matrix.spec }}
+            current: ${{ steps.update.outputs.current }}
+            latest: ${{ steps.update.outputs.latest }}
 
-            # Format RPM changelog entry
-            DATE_STR=$(date "+%a %b %d %Y")
-            CHANGELOG_ENTRY="* ${DATE_STR} ${AUTHOR} - ${LATEST_TAG}-1\n- Update to latest version"
+  commit-and-summary:
+    needs: check-updates
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-            # Insert changelog entry right after %changelog
-            sed -i "/^%changelog/a $CHANGELOG_ENTRY" ${{ matrix.spec }}
+      - name: Apply updates and commit
+        env:
+          AUTHOR: Frauke Dilg <frauke@dilg.dev>
+        run: |
+          JSON='${{ needs.check-updates.outputs.json }}'
+          
+          echo "$JSON" | jq -c '.[]' | while read -r item; do
+            spec=$(echo "$item" | jq -r '.spec')
+            CURRENT=$(echo "$item" | jq -r '.current // empty')
+            LATEST=$(echo "$item" | jq -r '.latest // empty')
+            
+            if [ -n "$LATEST" ] && [ -n "$CURRENT" ] && [ "$LATEST" != "$CURRENT" ]; then
+              # Update Version field
+              sed -i -E "s/^(Version:[[:space:]]+).*/\\1${LATEST}/" "$spec"
 
-            echo "updated=true" >> "$GITHUB_OUTPUT"
+              # Format RPM changelog entry
+              DATE_STR=$(date "+%a %b %d %Y")
+              CHANGELOG_ENTRY="* ${DATE_STR} ${AUTHOR} - ${LATEST}-1\n- Update to latest version"
+
+              # Insert changelog entry right after %changelog
+              sed -i "/^%changelog/a $CHANGELOG_ENTRY" "$spec"
+            fi
+          done
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Update spec versions"
+            git push origin HEAD:${{ github.ref_name }}
           fi
+
+      - name: Create version summary
+        run: |
+          echo "## 📊 Spec Version Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tool | Current Version | Latest Version | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-----------------|----------------|--------|" >> "$GITHUB_STEP_SUMMARY"
+          
+          # Get all outputs as JSON and parse with jq
+          # looks like [{ name: tool_name, current: v1.0.0, latest: v1.0.1 }]
+          JSON='${{ needs.check-updates.outputs.json }}'
+          
+          echo "$JSON" | jq -c '.[]' | while read -r item; do
+            tool=$(echo "$item" | jq -r '.name')
+            CURRENT=$(echo "$item" | jq -r '.current // "N/A"')
+            LATEST=$(echo "$item" | jq -r '.latest // empty')
+            
+            if [ -z "$LATEST" ]; then
+              STATUS="⚠️ Could not fetch"
+              LATEST="N/A"
+            elif [ "$CURRENT" = "$LATEST" ]; then
+              STATUS="✅ Up to date"
+            else
+              STATUS="🔄 Update available"
+            fi
+            
+            echo "| $tool | $CURRENT | $LATEST | $STATUS |" >> "$GITHUB_STEP_SUMMARY"
+          done
+          
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "*Last updated: $(date -u +'%Y-%m-%d %H:%M:%S UTC')*" >> "$GITHUB_STEP_SUMMARY"
