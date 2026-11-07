@@ -1,0 +1,52 @@
+name: Update Spec Versions
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # daily at 08:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: hetznercloud-cli
+            spec: hetznercloud-cli/hetznercloud-cli.spec
+            repo: hetznercloud/cli
+          - name: kubesoloctl
+            spec: kubesoloctl/kubesoloctl.spec
+            repo: portainer/kubesolo
+          - name: scaleway-cli
+            spec: scaleway-cli/scaleway-cli.spec
+            repo: scaleway/scaleway-cli
+          - name: sops
+            spec: sops/sops.spec
+            repo: getsops/sops
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check and update ${{ matrix.name }}
+        id: update
+        env:
+          AUTHOR: Frauke Dilg <frauke@dilg.dev>
+        run: |
+          LATEST_TAG=$(gh api repos/${{ matrix.repo }}/releases/latest --jq '.tag_name' | sed 's/^v//')
+          CURRENT_VERSION=$(grep -E '^Version:' ${{ matrix.spec }} | awk '{print $2}')
+
+          echo "Current: $CURRENT_VERSION, Latest: $LATEST_TAG"
+
+          if [ -n "$LATEST_TAG" ] && [ "$LATEST_TAG" != "$CURRENT_VERSION" ]; then
+            # Update Version field and reset Release
+            sed -i -E "s/^(Version:[[:space:]]+).*/\\1${LATEST_TAG}/" ${{ matrix.spec }}
+
+            # Format RPM changelog entry
+            DATE_STR=$(date "+%a %b %d %Y")
+            CHANGELOG_ENTRY="* ${DATE_STR} ${AUTHOR} - ${LATEST_TAG}-1\n- Update to latest version"
+
+            # Insert changelog entry right after %changelog
+            sed -i "/^%changelog/a $CHANGELOG_ENTRY" ${{ matrix.spec }}
+
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          fi
