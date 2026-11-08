@@ -68,8 +68,10 @@ jobs:
           AUTHOR: Frauke Dilg <frauke@dilg.dev>
         run: |
           JSON='${{ needs.check-updates.outputs.json }}'
+          UPDATED_TAGS=()
           
-          echo "$JSON" | jq -c '.[]' | while read -r item; do
+          while read -r item; do
+            name=$(echo "$item" | jq -r '.name')
             spec=$(echo "$item" | jq -r '.spec')
             CURRENT=$(echo "$item" | jq -r '.current // empty')
             LATEST=$(echo "$item" | jq -r '.latest // empty')
@@ -84,15 +86,20 @@ jobs:
 
               # Insert changelog entry right after %changelog
               sed -i "/^%changelog/a $CHANGELOG_ENTRY" "$spec"
+
+              UPDATED_TAGS+=("${name}-${LATEST}")
             fi
-          done
+          done < <(echo "$JSON" | jq -c '.[]')
 
           if [ -n "$(git status --porcelain)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git add .
             git commit -m "Update spec versions"
-            git push origin HEAD:${{ github.ref_name }}
+            for tag in "${UPDATED_TAGS[@]}"; do
+              git tag "$tag"
+            done
+            git push origin HEAD:${{ github.ref_name }} "${UPDATED_TAGS[@]}"
           fi
 
       - name: Create version summary
