@@ -1,5 +1,5 @@
 Name:           kubesoloctl
-Version:        1.2.3
+Version:        1.3.0
 Release:        1%{?dist}
 Summary:        A single binary that manages the whole KubeSolo lifecycle
 
@@ -34,6 +34,8 @@ install -Dpm 0755 kubesoloctl %{buildroot}%{_bindir}/kubesoloctl
 %{_bindir}/kubesoloctl
 
 %changelog
+* Wed Nov 11 2026 Frauke Dilg <frauke@dilg.dev> - 1.3.0-1
+- Update to latest version
 * Sun Nov 08 2026 Frauke Dilg <frauke@dilg.dev> - 1.2.3-1
 - Update to latest version
 * Sun Oct 25 2026 Frauke Dilg <frauke@dilg.dev> - 1.2.2-1
