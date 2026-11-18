@@ -1,5 +1,5 @@
 Name:           scaleway-cli
-Version:        2.66.0
+Version:        2.66.1
 Release:        1%{?dist}
 Summary:        CLI for Scaleway Cloud
 
@@ -34,6 +34,8 @@ install -Dpm 0755 scw %{buildroot}%{_bindir}/scw
 %{_bindir}/scw
 
 %changelog
+* Wed Nov 18 2026 Frauke Dilg <frauke@dilg.dev> - 2.66.1-1
+- Update to latest version
 * Thu Nov 12 2026 Frauke Dilg <frauke@dilg.dev> - 2.66.0-1
 - Update to latest version
 * Sun Oct 25 2026 Frauke Dilg <frauke@dilg.dev> - 2.65.2-1
