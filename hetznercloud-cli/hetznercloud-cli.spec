@@ -1,5 +1,5 @@
 Name:           hetznercloud-cli
-Version:        1.70.2
+Version:        1.71.0
 Release:        1%{?dist}
 Summary:        CLI for Hetzner Cloud
 
@@ -34,6 +34,8 @@ install -Dpm 0755 hcloud %{buildroot}%{_bindir}/hcloud
 %{_bindir}/hcloud
 
 %changelog
+* Thu Nov 26 2026 Frauke Dilg <frauke@dilg.dev> - 1.71.0-1
+- Update to latest version
 * Sun Oct 25 2026 Frauke Dilg <frauke@dilg.dev> - 1.70.2-1
 - Update to latest version
 * Fri Jul 17 2026 Frauke Dilg <frauke@dilg.dev> - 1.66.0-1
